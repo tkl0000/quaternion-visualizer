@@ -1,8 +1,10 @@
 from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation  
+from matplotlib.widgets import CheckButtons
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+
 
 class Rect:
     def __init__(self, v1, v2, v3, v4):
@@ -46,19 +48,21 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         ax.plot3D(x_base, y_base, z_base, 'black')
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
 
-def plot_rect_rotation(i, ax, rect, q_axis, frames):
+def plot_rect_rotation(i, ax, rect, q_axes, frames):
     for artist in plt.gca().lines + plt.gca().collections:
         artist.remove()
-    q_x = np.linspace(0, q_axis[0])
-    q_y = np.linspace(0, q_axis[1])
-    q_z = np.linspace(0, q_axis[2])
-    ax.plot3D(q_x, q_y, q_z, 'blue')
-    q = Quaternion(axis=q_axis, angle=(np.linspace(0, math.pi * 2, frames))[i])
-    points = rect.as_array()
-    for i in range(0, points.size):
+    q = Quaternion() #identity quaternion
+    for q_axis in q_axes:
+        q = q * Quaternion(axis=q_axis, angle=(np.linspace(0, math.pi * 2, frames))[i])
+        plot_vector(ax, q.rotate(q_axis), 'blue')
 
-        p_a = points[i]
-        p_b = points[i-1]
+    print(q.angle)
+
+    points = rect.as_array()
+    for p_index in range(0, points.size):
+
+        p_a = points[p_index]
+        p_b = points[p_index-1]
 
         a_base_prime = q.rotate(p_a.base)
         a_tick_prime = q.rotate(p_a.tick)
@@ -72,38 +76,46 @@ def plot_rect_rotation(i, ax, rect, q_axis, frames):
                   np.linspace(a_base_prime[1], a_tick_prime[1]),
                   np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
-fig = plt.figure()
- 
-# syntax for 3-D projection
-ax = plt.axes(projection ='3d')
-ax.axes.set_xlim3d(left=-1, right=1) 
-ax.axes.set_ylim3d(bottom=-1, top=1) 
-ax.axes.set_zlim3d(bottom=-1, top=1) 
-ax.set_xticks([-1, 0, 1])
-ax.set_yticks([-1, 0, 1])
-ax.set_zticks([-1, 0, 1])
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
- 
-quaternion_axis = np.array([0., 0., 1.])
-p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
-p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
-p3 = Vector(np.array([-0.5, -0.25, 0]), np.array([-0.5, -0.25, 0.125]))
-p4 = Vector(np.array([-0.5, 0.25, 0]), np.array([-0.5, 0.25, 0.125]))
+def configure(ax):
+    ax.axes.set_xlim3d(left=-1, right=1) 
+    ax.axes.set_ylim3d(bottom=-1, top=1) 
+    ax.axes.set_zlim3d(bottom=-1, top=1) 
+    ax.set_xticks([-1, 0, 1])
+    ax.set_yticks([-1, 0, 1])
+    ax.set_zticks([-1, 0, 1])
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
 
-r = Rect(p1, p2, p3, p4)
+def main():
+    fig = plt.figure()
+    
+    ax = plt.axes(projection ='3d')
+    configure(ax)
+    
+    q1 = np.array([0., 0., 1.])
+    q2 = np.array([1., 0., 0])
+    q_array = np.array([q1, q2])
 
-num_frames = 200
-args = [ax, r, quaternion_axis, num_frames]
-anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
-# anim = FuncAnimation(fig, plot_vector_rotation, fargs=args, frames = num_frames, interval = 20) 
+    p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
+    p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
+    p3 = Vector(np.array([-0.5, -0.25, 0]), np.array([-0.5, -0.25, 0.125]))
+    p4 = Vector(np.array([-0.5, 0.25, 0]), np.array([-0.5, 0.25, 0.125]))
 
-  
-# anim.save('ok.mp4',  
-#           writer = 'ffmpeg', fps = 30) 
+    r = Rect(p1, p2, p3, p4)
 
-# plot_vector(ax, v, 'black')
-# plot_vector(ax, quaternion_axis, 'blue')
+    num_frames = 200
+    args = [ax, r, q_array, num_frames]
+    anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
+    # anim = FuncAnimation(fig, plot_vector_rotation, fargs=args, frames = num_frames, interval = 20) 
 
-plt.show()
+    
+    # anim.save('ok.mp4',  writer = 'ffmpeg', fps = 30) 
+
+    # plot_vector(ax, v, 'black')
+    # plot_vector(ax, quaternion_axis, 'blue')
+
+    plt.show()
+
+if (__name__ == "__main__"):
+    main()
