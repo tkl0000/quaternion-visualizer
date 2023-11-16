@@ -1,6 +1,6 @@
 from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation  
-from matplotlib.widgets import Button, Slider
+from matplotlib.widgets import CheckButtons, Slider
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -114,11 +114,18 @@ def configure(ax):
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
 
+def toggle_animation(on, anim):
+    if (on):
+        anim.event_source.start()
+    else:
+        anim.event_source.stop()
+
 def main():
     fig = plt.figure()
     
     ax = plt.axes(projection ='3d')
-    slider_ax = fig.add_axes([0.1, 0.85, 0.8, 0.1])    
+    slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.05])   
+    button_ax = fig.add_axes([0.8, 0.08, 0.15, 0.05]) 
     configure(ax)
     
     q1 = np.array([0., 0., 1.])
@@ -135,17 +142,25 @@ def main():
     angle = 0
     angle_slider = Slider(
         ax=slider_ax,
-        label='F',
+        label='Theta',
         valmin=0,
         valmax=math.pi*2,
-        valfmt='%0.0f',
         valinit=0,
     )
+
+    animate_button = CheckButtons(
+        ax=button_ax,
+        labels=["Animate"],
+        actives=[1],
+    )
+
+    args = [ax, r, q_array, num_frames]
+    anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, q_array))
+    angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
+    animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
 
     plot_rect_rotation(angle, ax, r, q_array, num_frames)
-    # args = [ax, r, q_array, num_frames]
-    # anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
 
     plt.show()
 
