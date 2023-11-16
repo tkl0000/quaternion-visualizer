@@ -1,10 +1,9 @@
 from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation  
-from matplotlib.widgets import CheckButtons
+from matplotlib.widgets import Button, Slider
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
 
 class Rect:
     def __init__(self, v1, v2, v3, v4):
@@ -48,8 +47,36 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         ax.plot3D(x_base, y_base, z_base, 'black')
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
 
+def plot_rect_rotation_angle(rotation, ax, rect, q_axes):
+    for artist in ax.artists + ax.lines:
+        artist.remove()
+    q = Quaternion() #identity quaternion
+    for q_axis in q_axes:
+        q = q * Quaternion(axis=q_axis, angle=rotation)
+        plot_vector(ax, q.rotate(q_axis), 'blue')
+
+    print(q.angle)
+
+    points = rect.as_array()
+    for p_index in range(0, points.size):
+
+        p_a = points[p_index]
+        p_b = points[p_index-1]
+
+        a_base_prime = q.rotate(p_a.base)
+        a_tick_prime = q.rotate(p_a.tick)
+        b_base_prime = q.rotate(p_b.base)
+        b_tick_prime = q.rotate(p_b.tick)
+
+        ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
+                  np.linspace(a_base_prime[1], b_base_prime[1]), 
+                  np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
+        ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
+                  np.linspace(a_base_prime[1], a_tick_prime[1]),
+                  np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
+
 def plot_rect_rotation(i, ax, rect, q_axes, frames):
-    for artist in plt.gca().lines + plt.gca().collections:
+    for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
     for q_axis in q_axes:
@@ -91,29 +118,34 @@ def main():
     fig = plt.figure()
     
     ax = plt.axes(projection ='3d')
+    slider_ax = fig.add_axes([0.1, 0.85, 0.8, 0.1])    
     configure(ax)
     
     q1 = np.array([0., 0., 1.])
     q2 = np.array([1., 0., 0])
     q_array = np.array([q1, q2])
-
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
     p3 = Vector(np.array([-0.5, -0.25, 0]), np.array([-0.5, -0.25, 0.125]))
     p4 = Vector(np.array([-0.5, 0.25, 0]), np.array([-0.5, 0.25, 0.125]))
-
     r = Rect(p1, p2, p3, p4)
 
     num_frames = 200
-    args = [ax, r, q_array, num_frames]
-    anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
-    # anim = FuncAnimation(fig, plot_vector_rotation, fargs=args, frames = num_frames, interval = 20) 
 
-    
-    # anim.save('ok.mp4',  writer = 'ffmpeg', fps = 30) 
+    angle = 0
+    angle_slider = Slider(
+        ax=slider_ax,
+        label='F',
+        valmin=0,
+        valmax=math.pi*2,
+        valfmt='%0.0f',
+        valinit=0,
+    )
+    angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, q_array))
 
-    # plot_vector(ax, v, 'black')
-    # plot_vector(ax, quaternion_axis, 'blue')
+    plot_rect_rotation(angle, ax, r, q_array, num_frames)
+    # args = [ax, r, q_array, num_frames]
+    # anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
 
     plt.show()
 
