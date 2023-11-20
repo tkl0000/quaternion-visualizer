@@ -1,6 +1,7 @@
 from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation  
 from matplotlib.widgets import CheckButtons, Slider
+from matplotlib.widgets import TextBox
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -18,6 +19,16 @@ class Vector:
     def __init__(self, base, tick):
         self.base = base
         self.tick = tick
+
+class QuaternionChain:
+    def __init__(self):
+        self.chain = np.empty([0, 3])
+    def pop(self, index):
+        self.chain = np.delete(self.chain, index)
+    def pop(self):
+        self.chain = np.delete(self.chain, -1)
+    def push(self, axis):
+        self.chain = np.vstack([self.chain, axis])
 
 def plot_vector(ax, vec, color='green'):
     x = np.linspace(0, vec[0])
@@ -47,11 +58,11 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         ax.plot3D(x_base, y_base, z_base, 'black')
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
 
-def plot_rect_rotation_angle(rotation, ax, rect, q_axes):
+def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
     for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
-    for q_axis in q_axes:
+    for q_axis in quaternion_chain.chain:
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), 'blue')
 
@@ -75,11 +86,11 @@ def plot_rect_rotation_angle(rotation, ax, rect, q_axes):
                   np.linspace(a_base_prime[1], a_tick_prime[1]),
                   np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
-def plot_rect_rotation(i, ax, rect, q_axes, frames):
+def plot_rect_rotation(i, ax, rect, quaternion_chain, frames):
     for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
-    for q_axis in q_axes:
+    for q_axis in quaternion_chain.chain:
         q = q * Quaternion(axis=q_axis, angle=(np.linspace(0, math.pi * 2, frames))[i])
         plot_vector(ax, q.rotate(q_axis), 'blue')
 
@@ -121,28 +132,28 @@ def toggle_animation(on, anim):
         anim.event_source.stop()
 
 def main():
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,6))
     
     ax = plt.axes(projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.05])   
-    button_ax = fig.add_axes([0.8, 0.08, 0.15, 0.05]) 
+    button_ax = fig.add_axes([0.8, 0.16, 0.15, 0.1]) 
     configure(ax)
-    
-    q1 = np.array([0., 0., 1.])
-    q2 = np.array([1., 0., 0])
-    q_array = np.array([q1, q2])
+
+    #initial example chain
+    quaternion_chain = QuaternionChain()
+    quaternion_chain.push(np.array([0., 0., 1.]))
+    quaternion_chain.push(np.array([1., 0., 0]))
+
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
     p3 = Vector(np.array([-0.5, -0.25, 0]), np.array([-0.5, -0.25, 0.125]))
     p4 = Vector(np.array([-0.5, 0.25, 0]), np.array([-0.5, 0.25, 0.125]))
     r = Rect(p1, p2, p3, p4)
 
-    num_frames = 200
-
-    angle = 0
+    theta = 0
     angle_slider = Slider(
         ax=slider_ax,
-        label='Theta',
+        label='Theta\n(radians)',
         valmin=0,
         valmax=math.pi*2,
         valinit=0,
@@ -154,13 +165,14 @@ def main():
         actives=[1],
     )
 
-    args = [ax, r, q_array, num_frames]
+    num_frames = 200
+    args = [ax, r, quaternion_chain, num_frames]
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
-    angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, q_array))
+    angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
     angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
 
-    plot_rect_rotation(angle, ax, r, q_array, num_frames)
+    plot_rect_rotation(theta, ax, r, quaternion_chain, num_frames)
 
     plt.show()
 
