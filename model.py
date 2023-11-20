@@ -134,9 +134,9 @@ def toggle_animation(on, anim):
 def main():
     fig = plt.figure(figsize=(10,6))
     
-    ax = plt.axes(projection ='3d')
-    slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.05])   
-    button_ax = fig.add_axes([0.8, 0.16, 0.15, 0.1]) 
+    ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
+    slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
+    button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
     configure(ax)
 
     #initial example chain
@@ -157,12 +157,19 @@ def main():
         valmin=0,
         valmax=math.pi*2,
         valinit=0,
+        dragging=True,
     )
 
     animate_button = CheckButtons(
         ax=button_ax,
         labels=["Animate"],
         actives=[1],
+        frame_props={
+            'sizes':np.array([100])
+        },
+        check_props={
+            'sizes':np.array([100])
+        },
     )
 
     num_frames = 200
