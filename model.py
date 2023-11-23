@@ -29,6 +29,8 @@ class QuaternionChain:
         self.chain = np.delete(self.chain, -1)
     def push(self, axis):
         self.chain = np.vstack([self.chain, axis])
+    def size(self):
+        return len(self.chain)
 
 def plot_vector(ax, vec, color='green'):
     x = np.linspace(0, vec[0])
@@ -133,16 +135,24 @@ def toggle_animation(on, anim):
 
 def main():
     fig = plt.figure(figsize=(10,6))
-    
     ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
     configure(ax)
+    plt.subplots_adjust(bottom=0.2)
+
+    quaternion_chain_input = []
+    def add_quaternion(label, initial=''):
+        axbox = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        text_box = TextBox(axbox, label, initial=initial)
+        quaternion_chain_input.append(text_box)
 
     #initial example chain
     quaternion_chain = QuaternionChain()
-    quaternion_chain.push(np.array([0., 0., 1.]))
-    quaternion_chain.push(np.array([1., 0., 0]))
+    quaternion_chain.push(np.array([0, 0, 1]))
+    quaternion_chain.push(np.array([1, 0, 0]))
+    for i in range(quaternion_chain.size()):
+        add_quaternion(f'q{i}', quaternion_chain.chain[i])
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
