@@ -2,6 +2,7 @@ from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation  
 from matplotlib.widgets import CheckButtons, Slider
 from matplotlib.widgets import TextBox
+from matplotlib.widgets import Button
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -139,20 +140,37 @@ def main():
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
     configure(ax)
-    plt.subplots_adjust(bottom=0.2)
-
-    quaternion_chain_input = []
-    def add_quaternion(label, initial=''):
-        axbox = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
-        text_box = TextBox(axbox, label, initial=initial)
-        quaternion_chain_input.append(text_box)
 
     #initial example chain
     quaternion_chain = QuaternionChain()
     quaternion_chain.push(np.array([0, 0, 1]))
     quaternion_chain.push(np.array([1, 0, 0]))
-    for i in range(quaternion_chain.size()):
-        add_quaternion(f'q{i}', quaternion_chain.chain[i])
+    quaternion_chain_input = []
+
+    def add_quaternion_input(label, initial=''):
+        axbox = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        text_box = TextBox(axbox, label, initial=initial)
+        quaternion_chain_input.append(text_box)
+
+    def add_and_refresh():
+        identity = np.array([0, 0, 1])
+        quaternion_chain.push(identity)
+        print(len(quaternion_chain.chain))
+        print("hi")
+        update_input_boxes()
+
+    def update_input_boxes():
+        for qci in quaternion_chain_input:
+            qci.remove()
+            quaternion_chain_input.remove(qci)
+        quaternion_chain_input.clear()
+        for i in range(quaternion_chain.size()):
+            add_quaternion_input(f'q{i}', str(quaternion_chain.chain[i].tolist()))
+        axadd = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        add_button = Button(axadd, "add quaternion", color="white")
+        add_button.on_clicked(add_and_refresh)
+    
+    update_input_boxes()
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
