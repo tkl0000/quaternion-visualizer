@@ -32,6 +32,8 @@ class QuaternionChain:
         self.chain = np.vstack([self.chain, axis])
     def size(self):
         return len(self.chain)
+    def edit(self, index, new_axis):
+        self.chain[index] = new_axis
 
 def plot_vector(ax, vec, color='green'):
     x = np.linspace(0, vec[0])
@@ -155,20 +157,26 @@ def main():
         axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
         text_box = TextBox(axbox, label, initial=initial)
         quaternion_chain_input.append(text_box)
+        text_box.on_submit(lambda dummylambda: refresh_quaternions(text_box))
 
-    def add_and_refresh():
+    def refresh_inputs():
         identity = np.array([0, 0, 0])
         quaternion_chain.push(identity)
         update_input_boxes()
 
+    def refresh_quaternions(text_box):
+        index = int((text_box.label.get_text()))
+        axis = np.fromstring(text_box.text, sep=', ')
+        quaternion_chain.edit(index, axis)
+
     def update_input_boxes():
         quaternion_chain_input.clear()
         for i in range(quaternion_chain.size()):
-            add_quaternion_input(f'q{i}', str(quaternion_chain.chain[i].tolist()))
+            add_quaternion_input(i, str(quaternion_chain.chain[i].tolist())[1:-1])
         axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
         global add_button
         add_button = Button(axadd, "add quaternion", color="white")
-        add_button.on_clicked(lambda dummylambda: add_and_refresh())
+        add_button.on_clicked(lambda dummylambda: refresh_inputs())
     
     update_input_boxes()
 
