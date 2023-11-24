@@ -67,11 +67,12 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
     for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
-    for q_axis in quaternion_chain.chain:
+    for i in range(len(quaternion_chain.chain)):
+        q_axis = quaternion_chain.chain[i]
         if (q_axis[0]==q_axis[1]==q_axis[2]==0):
             continue
         q = q * Quaternion(axis=q_axis, angle=rotation)
-        plot_vector(ax, q.rotate(q_axis), 'blue')
+        plot_vector(ax, q.rotate(q_axis), color='blue')
 
     print(q.angle)
 
@@ -94,34 +95,8 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
                   np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
 def plot_rect_rotation(i, ax, rect, quaternion_chain, frames):
-    for artist in ax.artists + ax.lines:
-        artist.remove()
-    q = Quaternion() #identity quaternion
-    for q_axis in quaternion_chain.chain:
-        if (q_axis[0]==q_axis[1]==q_axis[2]==0):
-            continue
-        q = q * Quaternion(axis=q_axis, angle=(np.linspace(0, math.pi * 2, frames))[i])
-        plot_vector(ax, q.rotate(q_axis), 'blue')
 
-    print(q.angle)
-
-    points = rect.as_array()
-    for p_index in range(0, points.size):
-
-        p_a = points[p_index]
-        p_b = points[p_index-1]
-
-        a_base_prime = q.rotate(p_a.base)
-        a_tick_prime = q.rotate(p_a.tick)
-        b_base_prime = q.rotate(p_b.base)
-        b_tick_prime = q.rotate(p_b.tick)
-
-        ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
-                  np.linspace(a_base_prime[1], b_base_prime[1]), 
-                  np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
-        ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
-                  np.linspace(a_base_prime[1], a_tick_prime[1]),
-                  np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
+    plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frames))[i], ax, rect, quaternion_chain)
 
 def configure(ax):
     ax.axes.set_xlim3d(left=-1, right=1) 
@@ -218,7 +193,7 @@ def main():
         },
     )
 
-    num_frames = 90
+    num_frames = 45
     args = [ax, r, quaternion_chain, num_frames]
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
