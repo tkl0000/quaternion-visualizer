@@ -140,6 +140,13 @@ def toggle_animation(on, anim):
     else:
         anim.event_source.stop()
 
+def normalize(axis):
+    magnitude = np.linalg.norm(axis)
+    if magnitude == 0:
+        return axis
+    normalized_vector = (axis / magnitude).round(2)
+    return normalized_vector
+
 def main():
     fig = plt.figure(figsize=(10,6))
     ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
@@ -166,7 +173,10 @@ def main():
 
     def refresh_quaternions(text_box):
         index = int((text_box.label.get_text()))
-        axis = np.fromstring(text_box.text, sep=', ')
+        axis = np.fromstring(text_box.text, sep=', ', dtype=float)
+        axis = normalize(axis)
+        print(axis)
+        text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
 
     def update_input_boxes():
