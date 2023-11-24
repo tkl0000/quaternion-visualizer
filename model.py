@@ -66,6 +66,8 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
         artist.remove()
     q = Quaternion() #identity quaternion
     for q_axis in quaternion_chain.chain:
+        if (q_axis[0]==q_axis[1]==q_axis[2]==0):
+            continue
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), 'blue')
 
@@ -94,6 +96,8 @@ def plot_rect_rotation(i, ax, rect, quaternion_chain, frames):
         artist.remove()
     q = Quaternion() #identity quaternion
     for q_axis in quaternion_chain.chain:
+        if (q_axis[0]==q_axis[1]==q_axis[2]==0):
+            continue
         q = q * Quaternion(axis=q_axis, angle=(np.linspace(0, math.pi * 2, frames))[i])
         plot_vector(ax, q.rotate(q_axis), 'blue')
 
@@ -148,27 +152,23 @@ def main():
     quaternion_chain_input = []
 
     def add_quaternion_input(label, initial=''):
-        axbox = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
         text_box = TextBox(axbox, label, initial=initial)
         quaternion_chain_input.append(text_box)
 
     def add_and_refresh():
-        identity = np.array([0, 0, 1])
+        identity = np.array([0, 0, 0])
         quaternion_chain.push(identity)
-        print(len(quaternion_chain.chain))
-        print("hi")
         update_input_boxes()
 
     def update_input_boxes():
-        for qci in quaternion_chain_input:
-            qci.remove()
-            quaternion_chain_input.remove(qci)
         quaternion_chain_input.clear()
         for i in range(quaternion_chain.size()):
             add_quaternion_input(f'q{i}', str(quaternion_chain.chain[i].tolist()))
-        axadd = plt.axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        global add_button
         add_button = Button(axadd, "add quaternion", color="white")
-        add_button.on_clicked(add_and_refresh)
+        add_button.on_clicked(lambda dummylambda: add_and_refresh())
     
     update_input_boxes()
 
@@ -200,7 +200,7 @@ def main():
         },
     )
 
-    num_frames = 200
+    num_frames = 90
     args = [ax, r, quaternion_chain, num_frames]
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
