@@ -130,23 +130,26 @@ def main():
     quaternion_chain = QuaternionChain()
     quaternion_chain.push(np.array([0, 0, 1]))
     quaternion_chain.push(np.array([1, 0, 0]))
-    quaternion_chain_input = []
+    input_axes = []
+    text_boxes = []
 
     def add_quaternion_input(label, initial=''):
-        axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
-        text_box = TextBox(axbox, label, initial=initial)
-        quaternion_chain_input.append(axbox)
+        axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(input_axes) + 1), 0.2, 0.075])
+        text_box = TextBox(ax=axbox, label=label, initial=initial)
+        input_axes.append(axbox)
         text_box.on_submit(lambda dummylambda: refresh_quaternions(text_box))
+        text_boxes.append(text_box)
 
     def refresh_inputs_push():
-        identity = np.array([0, 0, 0])
-        quaternion_chain.push(identity)
-        update_input_boxes()
+        if (len(quaternion_chain.chain) < 6):
+            identity = np.array([0, 0, 1])
+            quaternion_chain.push(identity)
+            update_input_boxes()
 
     def refresh_inputs_pop():
         if (len(quaternion_chain.chain) > 0):
             quaternion_chain.pop()
-        update_input_boxes()
+            update_input_boxes()
 
     def refresh_quaternions(text_box):
         index = int((text_box.label.get_text()))
@@ -156,22 +159,23 @@ def main():
         quaternion_chain.edit(index, axis)
 
     def update_input_boxes():
-        while (len(quaternion_chain_input) > 0):
-            fig.delaxes(quaternion_chain_input[0])
-            quaternion_chain_input.pop(0)
+        text_boxes.clear()
+        while (len(input_axes) > 0):
+            fig.delaxes(input_axes[0])
+            input_axes.pop(0)
         for i in range(quaternion_chain.size()):
             add_quaternion_input(i, str(quaternion_chain.chain[i].tolist())[1:-1])
         margin=0.007
-        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.1-margin, 0.075])
-        axremove = fig.add_axes([0.78+margin, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.1-margin, 0.075])
+        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
+        axremove = fig.add_axes([0.78+margin, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
         global add_button
         global remove_button
         add_button = Button(axadd, "add", color="white")
         add_button.on_clicked(lambda dummylambda: refresh_inputs_push())
         remove_button = Button(axremove, "remove", color="white")
         remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
-        quaternion_chain_input.append(axadd)
-        quaternion_chain_input.append(axremove)
+        input_axes.append(axadd)
+        input_axes.append(axremove)
     
     update_input_boxes()
 
