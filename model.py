@@ -25,9 +25,9 @@ class QuaternionChain:
     def __init__(self):
         self.chain = np.empty([0, 3])
     def pop(self, index):
-        self.chain = np.delete(self.chain, index)
+        self.chain = np.delete(self.chain, index, axis=0)
     def pop(self):
-        self.chain = np.delete(self.chain, -1)
+        self.chain = np.delete(self.chain, -1, axis=0)
     def push(self, axis):
         self.chain = np.vstack([self.chain, axis])
     def size(self):
@@ -74,8 +74,6 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), color='blue')
 
-    print(q.angle)
-
     points = rect.as_array()
     for p_index in range(0, points.size):
 
@@ -95,7 +93,6 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
                   np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
 def plot_rect_rotation(i, ax, rect, quaternion_chain, frames):
-
     plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frames))[i], ax, rect, quaternion_chain)
 
 def configure(ax):
@@ -138,30 +135,43 @@ def main():
     def add_quaternion_input(label, initial=''):
         axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
         text_box = TextBox(axbox, label, initial=initial)
-        quaternion_chain_input.append(text_box)
+        quaternion_chain_input.append(axbox)
         text_box.on_submit(lambda dummylambda: refresh_quaternions(text_box))
 
-    def refresh_inputs():
+    def refresh_inputs_push():
         identity = np.array([0, 0, 0])
         quaternion_chain.push(identity)
+        update_input_boxes()
+
+    def refresh_inputs_pop():
+        if (len(quaternion_chain.chain) > 0):
+            quaternion_chain.pop()
         update_input_boxes()
 
     def refresh_quaternions(text_box):
         index = int((text_box.label.get_text()))
         axis = np.fromstring(text_box.text, sep=', ', dtype=float)
         axis = normalize(axis)
-        print(axis)
         text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
 
     def update_input_boxes():
-        quaternion_chain_input.clear()
+        while (len(quaternion_chain_input) > 0):
+            fig.delaxes(quaternion_chain_input[0])
+            quaternion_chain_input.pop(0)
         for i in range(quaternion_chain.size()):
             add_quaternion_input(i, str(quaternion_chain.chain[i].tolist())[1:-1])
-        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.2, 0.075])
+        margin=0.007
+        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.1-margin, 0.075])
+        axremove = fig.add_axes([0.78+margin, 0.8 - 0.1 * (len(quaternion_chain_input) + 1), 0.1-margin, 0.075])
         global add_button
-        add_button = Button(axadd, "add quaternion", color="white")
-        add_button.on_clicked(lambda dummylambda: refresh_inputs())
+        global remove_button
+        add_button = Button(axadd, "add", color="white")
+        add_button.on_clicked(lambda dummylambda: refresh_inputs_push())
+        remove_button = Button(axremove, "remove", color="white")
+        remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
+        quaternion_chain_input.append(axadd)
+        quaternion_chain_input.append(axremove)
     
     update_input_boxes()
 
