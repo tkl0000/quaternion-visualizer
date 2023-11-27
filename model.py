@@ -142,7 +142,7 @@ def main():
 
     def refresh_inputs_push():
         if (len(quaternion_chain.chain) < 6):
-            identity = np.array([0, 0, 1])
+            identity = np.array([0, 0, 0])
             quaternion_chain.push(identity)
             update_input_boxes()
 
@@ -207,9 +207,9 @@ def main():
         },
     )
 
-    num_frames = 45
+    num_frames = 120
     args = [ax, r, quaternion_chain, num_frames]
-    anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 20)
+    anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 10)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
     angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
