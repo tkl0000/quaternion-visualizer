@@ -7,6 +7,9 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+#blue = axes of rotation
+#green = "immediate" axis of rotation
+
 class Rect:
     def __init__(self, v1, v2, v3, v4):
         self.p1 = v1
@@ -73,6 +76,8 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
             continue
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), color='blue')
+
+    plot_vector(ax, q.axis, color="green")
 
     points = rect.as_array()
     for p_index in range(0, points.size):
