@@ -78,14 +78,6 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
         plot_vector(ax, q.rotate(q_axis), color='blue')
 
     plot_vector(ax, q.axis, color="green")
-    global delta_alpha_values
-    global num_frames
-    if (len(delta_alpha_values) < num_frames):
-        delta_alpha_values = np.append(delta_alpha_values, q.angle)
-    else:
-        delta_alpha_values = np.empty(0)
-        print('hi')
-
     points = rect.as_array()
     for p_index in range(0, points.size):
 
@@ -173,11 +165,16 @@ def main():
 
     def update_delta_alpha(frame_num):
         global delta_alpha_values
-        if (frame_num == 1):
-            delta_alpha.cla()
-        else:
-            delta_alpha.plot(delta_alpha_values, 'black')
-        print(delta_alpha_values)
+        delta_alpha.plot(delta_alpha_values[0:frame_num], 'black')
+
+    def generate_delta_alpha_graph(q_chain):
+        delta_alpha_values = np.empty((0, 2))
+        global num_frames
+        for alpha in np.linspace(0, 2*math.pi, num_frames):
+            base = Quaternion()
+            for ax in q_chain.chain:
+                base.rotate(Quaternion(axis=ax, angle=alpha))
+            delta_alpha_values = delta_alpha_values.append(base.angle)
 
     def update_input_boxes():
         text_boxes.clear()
@@ -197,12 +194,9 @@ def main():
         remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
         input_axes.append(axadd)
         input_axes.append(axremove)
-
-        global delta_alpha_values
-        delta_alpha_values = np.array([])
+        generate_delta_alpha_graph(delta_alpha)
     
     update_input_boxes()
-    update_delta_alpha(0)
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
@@ -237,6 +231,8 @@ def main():
 
     global delta_alpha_values
     delta_alpha_values = np.array([])
+
+
 
     args = [ax, r, quaternion_chain, num_frames]
     plot_args = []
