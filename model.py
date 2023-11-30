@@ -127,9 +127,9 @@ def normalize(axis):
 
 def main():
     fig = plt.figure()
-    delta_alpha = plt.axes((0.6, 0.1, 0.3, 0.3))
+    delta_alpha = plt.axes((0.5, 0.15, 0.25, 0.7))
     delta_alpha.set_xlim([0, 2*math.pi])
-    ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
+    ax = plt.axes((-0.2, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
     configure(ax)
@@ -142,7 +142,7 @@ def main():
     text_boxes = []
 
     def add_quaternion_input(label, initial=''):
-        axbox = fig.add_axes([0.68, 0.8 - 0.1 * (len(input_axes) + 1), 0.2, 0.075])
+        axbox = fig.add_axes([0.78, 0.8 - 0.1 * (len(input_axes) + 1), 0.2, 0.075])
         text_box = TextBox(ax=axbox, label=label, initial=initial)
         input_axes.append(axbox)
         text_box.on_submit(lambda dummylambda: refresh_quaternions(text_box))
@@ -165,6 +165,7 @@ def main():
         axis = normalize(axis)
         text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
+        generate_delta_alpha_graph(quaternion_chain)
 
     global update_delta_alpha
     def update_delta_alpha(frame_num):
@@ -193,7 +194,7 @@ def main():
         for i in range(quaternion_chain.size()):
             add_quaternion_input(i, str(quaternion_chain.chain[i].tolist())[1:-1])
         margin=0.007
-        axadd = fig.add_axes([0.68, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
+        axadd = fig.add_axes([0.78, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
         axremove = fig.add_axes([0.78+margin, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
         global add_button
         global remove_button
