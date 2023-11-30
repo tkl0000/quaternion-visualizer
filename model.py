@@ -66,7 +66,9 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         ax.plot3D(x_base, y_base, z_base, 'black')
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
 
-def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
+def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
+    global update_delta_alpha
+    update_delta_alpha(frame)
     for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
@@ -96,8 +98,8 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
                   np.linspace(a_base_prime[1], a_tick_prime[1]),
                   np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
-def plot_rect_rotation(i, ax, rect, quaternion_chain, frames):
-    plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frames))[i], ax, rect, quaternion_chain)
+def plot_rect_rotation(i, ax, rect, quaternion_chain, frame):
+    plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frame))[i], ax, rect, quaternion_chain, i)
 
 def configure(ax):
     ax.axes.set_xlim3d(left=-1, right=1) 
@@ -126,6 +128,7 @@ def normalize(axis):
 def main():
     fig = plt.figure()
     delta_alpha = plt.axes((0.6, 0.1, 0.3, 0.3))
+    delta_alpha.set_xlim([0, 2*math.pi])
     ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
@@ -163,18 +166,24 @@ def main():
         text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
 
+    global update_delta_alpha
     def update_delta_alpha(frame_num):
+        print(frame_num)
         global delta_alpha_values
-        delta_alpha.plot(delta_alpha_values[0:frame_num], 'black')
+        global num_frames
+        delta_alpha.cla()
+        delta_alpha.plot(delta_alpha_values[0:frame_num, 0], delta_alpha_values[0:frame_num, 1], 'green')
 
     def generate_delta_alpha_graph(q_chain):
+        global delta_alpha_values
         delta_alpha_values = np.empty((0, 2))
         global num_frames
         for alpha in np.linspace(0, 2*math.pi, num_frames):
             base = Quaternion()
             for ax in q_chain.chain:
-                base.rotate(Quaternion(axis=ax, angle=alpha))
-            delta_alpha_values = delta_alpha_values.append(base.angle)
+                base *= (Quaternion(axis=ax, angle=alpha))
+            delta_alpha_values = np.vstack((delta_alpha_values, np.array([alpha, base.angle])))
+        print(delta_alpha_values)
 
     def update_input_boxes():
         text_boxes.clear()
@@ -194,8 +203,9 @@ def main():
         remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
         input_axes.append(axadd)
         input_axes.append(axremove)
-        generate_delta_alpha_graph(delta_alpha)
+        generate_delta_alpha_graph(quaternion_chain)
     
+    generate_delta_alpha_graph(quaternion_chain)
     update_input_boxes()
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
@@ -226,19 +236,11 @@ def main():
         },
     )
 
-    global num_frames
-    num_frames = 120
-
-    global delta_alpha_values
-    delta_alpha_values = np.array([])
-
-
-
     args = [ax, r, quaternion_chain, num_frames]
     plot_args = []
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 10)
-    plot_anim = FuncAnimation(fig, update_delta_alpha, fargs=plot_args, frames=num_frames, interval=10)
-    angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
+    # plot_anim = FuncAnimation(fig, update_delta_alpha, fargs=plot_args, frames=num_frames, interval=10)
+    angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain, int(new_angle/(2*math.pi)*num_frames)))
     angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
 
@@ -247,4 +249,6 @@ def main():
     plt.show()
 
 if (__name__ == "__main__"):
+    global num_frames
+    num_frames = 120
     main()
