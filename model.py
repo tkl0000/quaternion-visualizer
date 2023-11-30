@@ -78,6 +78,13 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain):
         plot_vector(ax, q.rotate(q_axis), color='blue')
 
     plot_vector(ax, q.axis, color="green")
+    global delta_alpha_values
+    global num_frames
+    if (len(delta_alpha_values) < num_frames):
+        delta_alpha_values = np.append(delta_alpha_values, q.angle)
+    else:
+        delta_alpha_values = np.empty(0)
+        print('hi')
 
     points = rect.as_array()
     for p_index in range(0, points.size):
@@ -125,7 +132,8 @@ def normalize(axis):
     return normalized_vector
 
 def main():
-    fig = plt.figure(figsize=(10,6))
+    fig = plt.figure()
+    delta_alpha = plt.axes((0.6, 0.1, 0.3, 0.3))
     ax = plt.axes((-0.1, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
@@ -163,6 +171,14 @@ def main():
         text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
 
+    def update_delta_alpha(frame_num):
+        global delta_alpha_values
+        if (frame_num == 1):
+            delta_alpha.cla()
+        else:
+            delta_alpha.plot(delta_alpha_values, 'black')
+        print(delta_alpha_values)
+
     def update_input_boxes():
         text_boxes.clear()
         while (len(input_axes) > 0):
@@ -181,8 +197,12 @@ def main():
         remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
         input_axes.append(axadd)
         input_axes.append(axremove)
+
+        global delta_alpha_values
+        delta_alpha_values = np.array([])
     
     update_input_boxes()
+    update_delta_alpha(0)
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
     p2 = Vector(np.array([0.5, -0.25, 0]), np.array([0.5, -0.25, 0.125]))
@@ -212,9 +232,16 @@ def main():
         },
     )
 
+    global num_frames
     num_frames = 120
+
+    global delta_alpha_values
+    delta_alpha_values = np.array([])
+
     args = [ax, r, quaternion_chain, num_frames]
+    plot_args = []
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 10)
+    plot_anim = FuncAnimation(fig, update_delta_alpha, fargs=plot_args, frames=num_frames, interval=10)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain))
     angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
