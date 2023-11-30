@@ -128,7 +128,6 @@ def normalize(axis):
 def main():
     fig = plt.figure()
     delta_alpha = plt.axes((0.5, 0.15, 0.25, 0.7))
-    delta_alpha.set_xlim([0, 2*math.pi])
     ax = plt.axes((-0.2, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
@@ -173,6 +172,8 @@ def main():
         global delta_alpha_values
         global num_frames
         delta_alpha.cla()
+        delta_alpha.set_xlim([0, 2*math.pi])
+        delta_alpha.set_ylim([0, math.pi+1])
         delta_alpha.plot(delta_alpha_values[0:frame_num, 0], delta_alpha_values[0:frame_num, 1], 'green')
 
     def generate_delta_alpha_graph(q_chain):
@@ -195,7 +196,7 @@ def main():
             add_quaternion_input(i, str(quaternion_chain.chain[i].tolist())[1:-1])
         margin=0.007
         axadd = fig.add_axes([0.78, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
-        axremove = fig.add_axes([0.78+margin, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
+        axremove = fig.add_axes([0.88+margin, 0.8 - 0.1 * (len(input_axes) + 1), 0.1-margin, 0.075])
         global add_button
         global remove_button
         add_button = Button(axadd, "add", color="white")
