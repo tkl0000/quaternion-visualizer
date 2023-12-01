@@ -80,6 +80,7 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
         plot_vector(ax, q.rotate(q_axis), color='blue')
 
     plot_vector(ax, q.axis, color="green")
+    print(q.axis)
     points = rect.as_array()
     for p_index in range(0, points.size):
 
@@ -168,12 +169,11 @@ def main():
 
     global update_delta_alpha
     def update_delta_alpha(frame_num):
-        print(frame_num)
         global delta_alpha_values
         global num_frames
         delta_alpha.cla()
         delta_alpha.set_xlim([0, 2*math.pi])
-        delta_alpha.set_ylim([0, math.pi+1])
+        delta_alpha.set_ylim([0, 2*math.pi])
         delta_alpha.plot(delta_alpha_values[0:frame_num, 0], delta_alpha_values[0:frame_num, 1], 'green')
 
     def generate_delta_alpha_graph(q_chain):
@@ -184,7 +184,10 @@ def main():
             base = Quaternion()
             for ax in q_chain.chain:
                 base *= (Quaternion(axis=ax, angle=alpha))
-            delta_alpha_values = np.vstack((delta_alpha_values, np.array([alpha, base.angle])))
+            cur_angle = base.angle
+            if (cur_angle < 0):
+                cur_angle += 2*math.pi
+            delta_alpha_values = np.vstack((delta_alpha_values, np.array([alpha, cur_angle])))
         print(delta_alpha_values)
 
     def update_input_boxes():
