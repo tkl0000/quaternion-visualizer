@@ -76,6 +76,10 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
         q_axis = quaternion_chain.chain[i]
         if (q_axis[0]==q_axis[1]==q_axis[2]==0):
             continue
+        if (i == 1):
+            q = q * Quaternion(axis=q_axis, angle=rotation*1.5)
+        else:
+            q = q * Quaternion(axis=q_axis, angle=rotation)
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), color='blue')
 
