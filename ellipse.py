@@ -67,8 +67,6 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
 
 def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
-    global update_delta_alpha
-    update_delta_alpha(frame)
     for artist in ax.artists + ax.lines:
         artist.remove()
     q = Quaternion() #identity quaternion
@@ -78,26 +76,35 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
             continue
         q = q * Quaternion(axis=q_axis, angle=rotation)
         plot_vector(ax, q.rotate(q_axis), color='blue')
+    
+    # ellipse experiment thing
+    # IT IS IMPORTANT TO USE NP.CROSS BECAUSE THE MAGNIUTUDE OF THE CROSSED VECTOR DEPENDS ON THE ANGLE BETWEEN THE ORIGINALS!!!!!!!!!!!!!
+    p = np.cross(quaternion_chain.chain[0], quaternion_chain.chain[1])
+    v1 = np.array(quaternion_chain.chain[0] + quaternion_chain.chain[1])
+    v2 = -1 * p
+    # for theta in np.linspace(0, 2*math.pi, 100):
+    ellipse = p + math.sin(rotation) * v1 + math.cos(rotation) * v2
+    plot_vector(ax, p, color='purple')
+    plot_vector(ax, ellipse, color='purple')
+    plot_vector(ax, q.axis, color="green")
 
-    # plot_vector(ax, q.axis, color="green")
-    print(q.axis)
-    points = rect.as_array()
-    for p_index in range(0, points.size):
+    # points = rect.as_array()
+    # for p_index in range(0, points.size):
 
-        p_a = points[p_index]
-        p_b = points[p_index-1]
+    #     p_a = points[p_index]
+    #     p_b = points[p_index-1]
 
-        a_base_prime = q.rotate(p_a.base)
-        a_tick_prime = q.rotate(p_a.tick)
-        b_base_prime = q.rotate(p_b.base)
-        b_tick_prime = q.rotate(p_b.tick)
+    #     a_base_prime = q.rotate(p_a.base)
+    #     a_tick_prime = q.rotate(p_a.tick)
+    #     b_base_prime = q.rotate(p_b.base)
+    #     b_tick_prime = q.rotate(p_b.tick)
 
-        ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
-                  np.linspace(a_base_prime[1], b_base_prime[1]), 
-                  np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
-        ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
-                  np.linspace(a_base_prime[1], a_tick_prime[1]),
-                  np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
+    #     ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
+    #               np.linspace(a_base_prime[1], b_base_prime[1]), 
+    #               np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
+    #     ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
+    #               np.linspace(a_base_prime[1], a_tick_prime[1]),
+    #               np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
 def plot_rect_rotation(i, ax, rect, quaternion_chain, frame):
     plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frame))[i], ax, rect, quaternion_chain, i)
@@ -128,7 +135,6 @@ def normalize(axis):
 
 def main():
     fig = plt.figure()
-    delta_alpha = plt.axes((0.5, 0.15, 0.25, 0.7))
     ax = plt.axes((-0.2, 0.06, 0.8, 0.8), projection ='3d')
     slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
@@ -165,30 +171,6 @@ def main():
         axis = normalize(axis)
         text_box.set_val(str(axis.tolist())[1:-1])
         quaternion_chain.edit(index, axis)
-        generate_delta_alpha_graph(quaternion_chain)
-
-    global update_delta_alpha
-    def update_delta_alpha(frame_num):
-        global delta_alpha_values
-        global num_frames
-        delta_alpha.cla()
-        delta_alpha.set_xlim([0, 2*math.pi])
-        delta_alpha.set_ylim([0, 2*math.pi])
-        delta_alpha.plot(delta_alpha_values[0:frame_num, 0], delta_alpha_values[0:frame_num, 1], 'green')
-
-    def generate_delta_alpha_graph(q_chain):
-        global delta_alpha_values
-        delta_alpha_values = np.empty((0, 2))
-        global num_frames
-        for alpha in np.linspace(0, 2*math.pi, num_frames):
-            base = Quaternion()
-            for ax in q_chain.chain:
-                base *= (Quaternion(axis=ax, angle=alpha))
-            cur_angle = base.angle
-            if (cur_angle < 0):
-                cur_angle += 2*math.pi
-            delta_alpha_values = np.vstack((delta_alpha_values, np.array([alpha, cur_angle])))
-        print(delta_alpha_values)
 
     def update_input_boxes():
         text_boxes.clear()
@@ -208,9 +190,7 @@ def main():
         remove_button.on_clicked(lambda dummylambda: refresh_inputs_pop())
         input_axes.append(axadd)
         input_axes.append(axremove)
-        generate_delta_alpha_graph(quaternion_chain)
     
-    generate_delta_alpha_graph(quaternion_chain)
     update_input_boxes()
 
     p1 = Vector(np.array([0.5, 0.25, 0]), np.array([0.5, 0.25, 0.125]))
@@ -244,7 +224,6 @@ def main():
     args = [ax, r, quaternion_chain, num_frames]
     plot_args = []
     anim = FuncAnimation(fig, plot_rect_rotation, fargs=args, frames = num_frames, interval = 10)
-    # plot_anim = FuncAnimation(fig, update_delta_alpha, fargs=plot_args, frames=num_frames, interval=10)
     angle_slider.on_changed(lambda new_angle: plot_rect_rotation_angle(new_angle, ax, r, quaternion_chain, int(new_angle/(2*math.pi)*num_frames)))
     angle_slider.on_changed(lambda dummy_lambda: animate_button.set_active(0) if animate_button.get_status()[0] == True else False)
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
