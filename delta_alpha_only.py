@@ -69,39 +69,38 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
 def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
     global update_delta_alpha
     update_delta_alpha(frame)
-    for artist in ax.artists + ax.lines:
-        artist.remove()
-    q = Quaternion() #identity quaternion
-    for i in range(len(quaternion_chain.chain)):
-        q_axis = quaternion_chain.chain[i]
-        if (q_axis[0]==q_axis[1]==q_axis[2]==0):
-            continue
-        if (i == 1):
-            q = q * Quaternion(axis=q_axis, angle=rotation*1.5)
-        else:
-            q = q * Quaternion(axis=q_axis, angle=rotation)
-        q = q * Quaternion(axis=q_axis, angle=rotation)
-        plot_vector(ax, q.rotate(q_axis), color='blue')
+    # for artist in ax.artists + ax.lines:
+    #     artist.remove()
+    # q = Quaternion() #identity quaternion
+    # for i in range(len(quaternion_chain.chain)):
+    #     q_axis = quaternion_chain.chain[i]
+    #     if (q_axis[0]==q_axis[1]==q_axis[2]==0):
+    #         continue
+    #     if (i == 1):
+    #         q = q * Quaternion(axis=q_axis, angle=rotation)
+    #     else:
+    #         q = q * Quaternion(axis=q_axis, angle=rotation)
+        # plot_vector(ax, q.rotate(q_axis), color='blue')
 
     # plot_vector(ax, q.axis, color="green")
-    print(q.axis)
-    points = rect.as_array()
-    for p_index in range(0, points.size):
+    # print(q.axis)
+    # points = rect.as_array()
+    # for p_index in range(0, points.size):
 
-        p_a = points[p_index]
-        p_b = points[p_index-1]
+    #     p_a = points[p_index]
+    #     p_b = points[p_index-1]
 
-        a_base_prime = q.rotate(p_a.base)
-        a_tick_prime = q.rotate(p_a.tick)
-        b_base_prime = q.rotate(p_b.base)
-        b_tick_prime = q.rotate(p_b.tick)
+    #     a_base_prime = q.rotate(p_a.base)
+    #     a_tick_prime = q.rotate(p_a.tick)
+    #     b_base_prime = q.rotate(p_b.base)
+    #     b_tick_prime = q.rotate(p_b.tick)
 
-        ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
-                  np.linspace(a_base_prime[1], b_base_prime[1]), 
-                  np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
-        ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
-                  np.linspace(a_base_prime[1], a_tick_prime[1]),
-                  np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
+        # ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
+        #           np.linspace(a_base_prime[1], b_base_prime[1]), 
+        #           np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
+        # ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
+        #           np.linspace(a_base_prime[1], a_tick_prime[1]),
+        #           np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
 
 def plot_rect_rotation(i, ax, rect, quaternion_chain, frame):
     plot_rect_rotation_angle((np.linspace(0, math.pi * 2, frame))[i], ax, rect, quaternion_chain, i)
@@ -186,8 +185,12 @@ def main():
         global num_frames
         for alpha in np.linspace(0, 2*math.pi, num_frames):
             base = Quaternion()
-            for ax in q_chain.chain:
-                base *= (Quaternion(axis=ax, angle=alpha))
+            for i in range(len(q_chain.chain)):
+                ax = q_chain.chain[i]
+                if (i == 1):
+                    base *= (Quaternion(axis=ax, angle=alpha))
+                else:
+                    base *= (Quaternion(axis=ax, angle=alpha))
             cur_angle = base.angle
             if (cur_angle < 0):
                 cur_angle += 2*math.pi
