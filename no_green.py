@@ -87,9 +87,9 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
     
     # ellipse experiment thing
     # IT IS IMPORTANT TO USE NP.CROSS BECAUSE THE MAGNIUTUDE OF THE CROSSED VECTOR DEPENDS ON THE ANGLE BETWEEN THE ORIGINALS!!!!!!!!!!!!!
-    p = np.cross(quaternion_chain.chain[0], quaternion_chain.chain[1])
-    v1 = np.array(quaternion_chain.chain[0] + quaternion_chain.chain[1])
-    v2 = -1 * p
+    # p = np.cross(quaternion_chain.chain[0], quaternion_chain.chain[1])
+    # v1 = np.array(quaternion_chain.chain[0] + quaternion_chain.chain[1])
+    # v2 = -1 * p
 
     # entire ellipse
     # for theta in np.linspace(0, 2*math.pi, 120):
@@ -106,22 +106,22 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
     # resultant axis calculated from ellipse
     # plot_vector(ax, p, color='purple')
     # plot_vector(ax, v1, color='purple')
-    plot_vector(ax, 3 * q.axis, color="green")
+    # plot_vector(ax, 3 * q.axis, color="green")
 
     # main ellipse!!!!!!!!!
-    theta = np.linspace(0, 2 * np.pi, 201)
-    ellipse_x = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 0]
-    ellipse_y = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 1]
-    ellipse_z = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 2]
-    print(np.outer(np.array([1]) * 201, p))
-    ax.plot3D(ellipse_x, ellipse_y, ellipse_z, 'purple')
+    # theta = np.linspace(0, 2 * np.pi, 201)
+    # ellipse_x = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 0]
+    # ellipse_y = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 1]
+    # ellipse_z = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 2]
+    # print(np.outer(np.array([1]) * 201, p))
+    # ax.plot3D(ellipse_x, ellipse_y, ellipse_z, 'purple')
 
-    ellipse_vector = p + math.sin(rotation) * v1 + math.cos(rotation) * v2
-    p_x = np.linspace(p[0], ellipse_vector[0])
-    p_y = np.linspace(p[1], ellipse_vector[1])
-    p_z = np.linspace(p[2], ellipse_vector[2])
+    # ellipse_vector = p + math.sin(rotation) * v1 + math.cos(rotation) * v2
+    # p_x = np.linspace(p[0], ellipse_vector[0])
+    # p_y = np.linspace(p[1], ellipse_vector[1])
+    # p_z = np.linspace(p[2], ellipse_vector[2])
     
-    ax.plot3D(p_x, p_y, p_z, 'purple')
+    # ax.plot3D(p_x, p_y, p_z, 'purple')
 
     # plot_vector(ax, p + math.sin(rotation) * v1 + math.cos(rotation) * v2, color='purple')
 
@@ -278,6 +278,6 @@ def main():
 if (__name__ == "__main__"):
     global num_frames
     global multiplier
-    multiplier = 1
-    num_frames = 60
+    multiplier = 2
+    num_frames = 45
     main()
