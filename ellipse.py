@@ -113,7 +113,7 @@ def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
     ellipse_x = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 0]
     ellipse_y = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 1]
     ellipse_z = (np.outer(np.ones(201), p) + np.outer(np.cos(theta), v1) + np.outer(np.sin(theta), v2))[:, 2]
-    print(np.outer(np.array([1]) * 201, p))
+    # print(np.outer(np.array([1]) * 201, p))
     ax.plot3D(ellipse_x, ellipse_y, ellipse_z, 'purple')
 
     ellipse_vector = p + math.sin(rotation) * v1 + math.cos(rotation) * v2

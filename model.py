@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import CheckButtons, Slider
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import Button
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLineEdit, QLabel, QSplitter
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLineEdit, QLabel, QFrame
 from PyQt5.QtCore import pyqtSignal, Qt
 import numpy as np
 import math
@@ -44,6 +44,9 @@ class QuaternionInputWindow(QWidget):
         self.labels = []
         self.inputs = []
 
+        frame = QFrame()
+        frame_layout = QVBoxLayout(frame)
+
         # Create input fields for each quaternion
         for i in range(self.quaternion_chain.size()):
             label = QLabel(f"Quaternion {i}:")
@@ -51,11 +54,13 @@ class QuaternionInputWindow(QWidget):
             input_box.setAlignment(Qt.AlignCenter)
             input_box.editingFinished.connect(lambda i=i: self.update_quaternion(i))
 
-            layout.addWidget(label)
-            layout.addWidget(input_box)
+            frame_layout.addWidget(label)
+            frame_layout.addWidget(input_box)
 
             self.labels.append(label)
             self.inputs.append(input_box)
+
+        layout.addWidget(frame)
 
         # Add buttons to update quaternions
         self.add_button = QPushButton("Add Quaternion")
@@ -63,9 +68,6 @@ class QuaternionInputWindow(QWidget):
 
         self.remove_button = QPushButton("Remove Last Quaternion")
         self.remove_button.clicked.connect(self.remove_quaternion)
-
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        layout.addWidget(splitter)
 
         layout.addWidget(self.add_button)
         layout.addWidget(self.remove_button)
@@ -90,15 +92,17 @@ class QuaternionInputWindow(QWidget):
             pass  # Ignore invalid input
 
     def add_quaternion(self):
-        self.quaternion_chain.push(np.array([0, 0, 1, 1]))  # Default new quaternion
+        self.quaternion_chain.push(np.array([0, 0, 1, 1])) 
         self.refresh_inputs()
-        self.quaternion_updated.emit()  # Notify update
+        self.quaternion_updated.emit()  
+        generate_angle_values(self.quaternion_chain)
 
     def remove_quaternion(self):
         if self.quaternion_chain.size() > 0:
             self.quaternion_chain.pop()
             self.refresh_inputs()
-            self.quaternion_updated.emit()  # Notify update
+            self.quaternion_updated.emit()  
+            generate_angle_values(self.quaternion_chain)
 
     def refresh_inputs(self):
         # Clear layout
@@ -142,9 +146,8 @@ class QuaternionChain:
 def generate_angle_values(quaternion_chain):
     global angle_values
     global num_frames
-    angle_values = np.empty((0, 2))
+    angle_values = np.empty((0, 5))
     for alpha in np.linspace(0, 2*math.pi, num_frames):
-        print(alpha)
         q = Quaternion()
         for i in range(len(quaternion_chain.chain)):
             q_axis = quaternion_chain.chain[i][0:3]
@@ -153,11 +156,12 @@ def generate_angle_values(quaternion_chain):
                 continue
             q = q * Quaternion(axis=q_axis, angle=alpha*q_multiplier)
         cur_angle = q.angle
+        cur_axis = q.axis
         if (cur_angle < 0):
             cur_angle += 2*math.pi
-        angle_values = np.vstack((angle_values, np.array([alpha, cur_angle])))
+        angle_values = np.vstack((angle_values, np.array([alpha, cur_axis[0], cur_axis[1], cur_axis[2], cur_angle])))
     print("New Angle Values Generated")
-    print(angle_values)
+    # print(angle_values)
 
 def plot_vector(ax, vec, color='green'):
     x = np.linspace(0, vec[0])
@@ -184,41 +188,6 @@ def plot_vector_rotation(i, ax, vecs, q_axis, frames):
         z_tick = np.linspace(base_prime[2], tick_prime[2])
         ax.plot3D(x_base, y_base, z_base, 'black')
         ax.plot3D(x_tick, y_tick, z_tick, 'red')
-
-def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
-    for artist in ax.artists + ax.lines:
-        artist.remove()
-    q = Quaternion() #identity quaternion
-    for i in range(len(quaternion_chain.chain)):
-        q_axis = quaternion_chain.chain[i][0:3]
-        q_multiplier = quaternion_chain.chain[i][3]
-        if (q_axis[0]==q_axis[1]==q_axis[2]==0):
-            continue
-        q = q * Quaternion(axis=q_axis, angle=rotation*q_multiplier)
-        plot_vector(ax, q.rotate(q_axis), color='blue')
-
-    plot_vector(ax, q.axis, color="green")
-    # print(q.axis)
-    points = rect.as_array()
-    for p_index in range(0, points.size):
-
-        p_a = points[p_index]
-        p_b = points[p_index-1]
-
-        a_base_prime = q.rotate(p_a.base)
-        a_tick_prime = q.rotate(p_a.tick)
-        b_base_prime = q.rotate(p_b.base)
-        b_tick_prime = q.rotate(p_b.tick)
-
-        ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
-                  np.linspace(a_base_prime[1], b_base_prime[1]), 
-                  np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
-        ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
-                  np.linspace(a_base_prime[1], a_tick_prime[1]),
-                  np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
-
-def plot_rect_rotation_from_frame(i, ax, rect, quaternion_chain, num_frames):
-    plot_rect_rotation_angle((np.linspace(0, math.pi * 2, num_frames))[i], ax, rect, quaternion_chain, i)
 
 def configure(ax):
     ax.axes.set_xlim3d(left=-1, right=1) 
@@ -250,13 +219,15 @@ def main():
     app = QApplication(sys.argv)
 
     fig = plt.figure()
-    ax = plt.axes((0.1, 0.1, 0.8, 0.8), projection ='3d')
-    slider_ax = fig.add_axes([0.1, 0.9, 0.8, 0.1])   
+    ax = plt.axes((0.1, 0.1, 0.8, 0.8), projection ='3d')  
     button_ax = fig.add_axes([0.825, 0.045, 0.15, 0.1]) 
     configure(ax)
 
     fig2 = plt.figure(figsize=(4, 6))
     ax2 = plt.axes((0.15, 0.15, 0.7, 0.8))
+
+    fig3 = plt.figure(figsize=(6, 1))
+    slider_ax = fig3.add_axes([0.2, 0.5, 0.6, 0.1]) 
 
     # initial example chain
     # axis = [x, y, z, multiplier]
@@ -268,7 +239,7 @@ def main():
     input_window = QuaternionInputWindow(quaternion_chain)
     input_window.show()
     # input_window.quaternion_updated.connect(lambda: update_plot(angle_slider.val, ax, quaternion_chain))
-    input_window.quaternion_updated.connect(lambda: print("dummylambda"))
+    input_window.quaternion_updated.connect(lambda: {})
 
     # def update_plot(new_angle, ax, quaternion_chain):
     #     plot_rect_rotation_angle(new_angle, ax, quaternion_chain)
@@ -303,14 +274,58 @@ def main():
     )
 
     def plot_angle_from_frame(i):
-        i -= 1
+        i = max(0, i-1)
         global angle_values
         ax2.cla()
-        ax2.set_title(f'sin(theta/2) = {round(angle_values[i][1], 3)}')
+        ax2.set_title(f'theta = {round(angle_values[i][1], 3)}')
         ax2.set_xlim([0, 2*math.pi])
         ax2.set_ylim([0, 2*math.pi])
-        ax2.plot(angle_values[0:i, 0], angle_values[0:i, 1], 'green')
+        ax2.plot(angle_values[0:i, 0], angle_values[0:i, 4], 'green')
         fig2.canvas.draw_idle() 
+
+    def plot_rect_rotation_angle(rotation, ax, rect, quaternion_chain, frame):
+
+        global angle_values
+
+        for artist in ax.artists + ax.lines:
+            artist.remove()
+        q = Quaternion() #identity quaternion
+        for i in range(len(quaternion_chain.chain)):
+            q_axis = quaternion_chain.chain[i][0:3]
+            q_multiplier = quaternion_chain.chain[i][3]
+            if (q_axis[0]==q_axis[1]==q_axis[2]==0):
+                continue
+            q = q * Quaternion(axis=q_axis, angle=rotation*q_multiplier)
+            plot_vector(ax, q.rotate(q_axis), color='blue')
+
+        plot_vector(ax, q.axis, color="green")
+        ax.set_title(q)
+        points = rect.as_array()
+        for p_index in range(0, points.size):
+
+            p_a = points[p_index]
+            p_b = points[p_index-1]
+
+            a_base_prime = q.rotate(p_a.base)
+            a_tick_prime = q.rotate(p_a.tick)
+            b_base_prime = q.rotate(p_b.base)
+            b_tick_prime = q.rotate(p_b.tick)
+
+            ax.plot3D(np.linspace(a_base_prime[0], b_base_prime[0]), 
+                    np.linspace(a_base_prime[1], b_base_prime[1]), 
+                    np.linspace(a_base_prime[2], b_base_prime[2]), 'black')
+            ax.plot3D(np.linspace(a_base_prime[0], a_tick_prime[0]),
+                    np.linspace(a_base_prime[1], a_tick_prime[1]),
+                    np.linspace(a_base_prime[2], a_tick_prime[2]), 'red')
+            
+        # resultant path
+        # print(angle_values)
+        ax.plot3D(angle_values[1:, 1], angle_values[1:, 2], angle_values[1:, 3], color="purple")
+    
+        fig.canvas.draw_idle() 
+
+    def plot_rect_rotation_from_frame(i, ax, rect, quaternion_chain, num_frames):
+        plot_rect_rotation_angle((np.linspace(0, math.pi * 2, num_frames))[i], ax, rect, quaternion_chain, i)
 
     args = [ax, r, quaternion_chain, num_frames]
     args2 = [ax2, r, quaternion_chain, num_frames]
@@ -323,8 +338,9 @@ def main():
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim))
     animate_button.on_clicked(lambda dummy_lambda: toggle_animation(animate_button.get_status()[0], anim2))
 
-    plot_rect_rotation_from_frame(theta, ax, r, quaternion_chain, num_frames)
     generate_angle_values(quaternion_chain)
+    plot_rect_rotation_from_frame(theta, ax, r, quaternion_chain, num_frames)
+    
 
     plt.show()
 
